@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Editable Resume Builder</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Animate.css for Animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Custom CSS -->
+    <style>
+        /* Custom styles for better presentation */
+        body {
+            background-color: #f7f7f7;
+        }
+
+        .resume {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4 animate__animated animate__fadeInDown">Dynamic Editable Resume Builder</h1>
+
+        <!-- Form for user input -->
+        <form id="resumeForm" class="p-4 bg-light shadow rounded animate__animated animate__fadeInUp">
+            <!-- Username -->
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" class="form-control" placeholder="Your Username" required>
+            </div>
+
+            <!-- Personal Information -->
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" class="form-control" placeholder="Your Name" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" class="form-control" placeholder="Your Email" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="phone">Phone:</label>
+                    <input type="text" id="phone" class="form-control" placeholder="Your Phone" required>
+                </div>
+            </div>
+
+            <!-- Education -->
+            <div class="form-group mt-3">
+                <label for="education">Education:</label>
+                <textarea id="education" class="form-control" rows="3" placeholder="List your education details" required></textarea>
+            </div>
+
+            <!-- Work Experience -->
+            <div class="form-group">
+                <label for="workExperience">Work Experience:</label>
+                <textarea id="workExperience" class="form-control" rows="3" placeholder="List your work experience" required></textarea>
+            </div>
+
+            <!-- Skills -->
+            <div class="form-group">
+                <label for="skills">Skills:</label>
+                <input type="text" id="skills" class="form-control" placeholder="Separate skills with commas" required>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="button" id="generateResume" class="btn btn-primary btn-lg btn-block mt-3 animate__animated animate__pulse">Generate Resume</button>
+        </form>
+
+        <!-- Generated Resume Section -->
+        <div class="resume mt-5">
+            <h2 class="text-center animate__animated animate__fadeInDown">Generated Resume</h2>
+            <div id="resumeContent" class="mt-3 p-3 border border-secondary rounded animate__animated animate__fadeIn">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="text-center mt-3">
+                <!-- Share Link -->
+                <button id="shareLink" class="btn btn-info">Share Link</button>
+                <!-- Download as PDF -->
+                <button id="downloadPDF" class="btn btn-success">Download as PDF</button>
+                <div id="resumeLink" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("resumeForm");
+            const generateResumeBtn = document.getElementById("generateResume");
+            const resumeContent = document.getElementById("resumeContent");
+            const downloadPDFBtn = document.getElementById("downloadPDF");
+
+            form.addEventListener("submit", (e) => e.preventDefault());
+
+            generateResumeBtn.addEventListener("click", () => {
+                const username = document.getElementById("username").value;
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const phone = document.getElementById("phone").value;
+                const education = document.getElementById("education").value;
+                const workExperience = document.getElementById("workExperience").value;
+                const skills = document.getElementById("skills").value.split(",").map(skill => skill.trim());
+
+                resumeContent.innerHTML = `
+                    <h2>${name}</h2>
+                    <p>Email: ${email}</p>
+                    <p>Phone: ${phone}</p>
+                    <p>Education: ${education}</p>
+                    <p>Work Experience: ${workExperience}</p>
+                    <p>Skills: ${skills.join(", ")}</p>
+                `;
+
+                document.querySelector(".resume").style.display = "block";
+            });
+
+            downloadPDFBtn.addEventListener("click", () => {
+                const { jsPDF } = window.jspdf;
+                html2canvas(resumeContent).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 295; // A4 height in mm
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+
+                    let position = 0;
+
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+
+                    pdf.save('resume.pdf');
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
